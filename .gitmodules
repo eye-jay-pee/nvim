@@ -4,3 +4,12 @@
 [submodule "pack/default/start/gruvbox"]
 	path = pack/default/start/gruvbox
 	url = https://github.com/morhetz/gruvbox.git
+[submodule "pack/default/start/vim-fugitive"]
+	path = pack/default/start/vim-fugitive
+	url = https://github.com/tpope/vim-fugitive.git
+[submodule "pack/default/start/vim-airline"]
+	path = pack/default/start/vim-airline
+	url = https://github.com/vim-airline/vim-airline.git
+[submodule "pack/default/start/vim-unimpaired"]
+	path = pack/default/start/vim-unimpaired
+	url = https://github.com/tpope/vim-unimpaired
