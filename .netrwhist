@@ -1,0 +1,8 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =6
+let g:netrw_dirhist_6='/Users/ijp/Desktop/rust_sandbox/hello_cargo/src'
+let g:netrw_dirhist_5='/Users/ijp/Desktop/rust_sandbox/hello_cargo'
+let g:netrw_dirhist_4='/Users/ijp/Desktop/rust_sandbox'
+let g:netrw_dirhist_3='/Users/ijp/Desktop/rust_sandbox/hello_cargo'
+let g:netrw_dirhist_2='/Users/ijp/Desktop/rust_sandbox'
+let g:netrw_dirhist_1='/usr/share/vim'

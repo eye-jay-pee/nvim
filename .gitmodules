@@ -16,3 +16,6 @@
 [submodule "pack/default/start/vim"]
 	path = pack/default/start/nord
 	url = https://github.com/nordtheme/vim
+[submodule "pack/default/start/rust.vim"]
+	path = pack/default/start/rust.vim
+	url = https://github.com/rust-lang/rust.vim
