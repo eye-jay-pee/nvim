@@ -2,15 +2,16 @@ set secure " do not allow unsafe commands in vim config files
 set exrc " local vim config files have precidence
 
 
-set makeprg=cargo\ run
-
-" temp dotnet settings
+" dotnet settings
 " set makeprg=dotnet
-set errorformat+=%f(%l\\,%c):\ error\ CS%n:\ %m\ [%o]
-set errorformat+=%f(%l\\,%c):\ error\ MC%n:\ %m\ [%o]
+" set errorformat+=%f(%l\\,%c):\ error\ CS%n:\ %m\ [%o]
+" set errorformat+=%f(%l\\,%c):\ error\ MC%n:\ %m\ [%o]
 " format xaml as xml, becasue syntax is similar
 au BufNewFile,BufRead *.xaml        setf xml
 " end of temp dotnet settings
+
+syntax enable
+filetype plugin indent on
 
 " rust settings 
 let &efm = ''
@@ -35,8 +36,7 @@ let &efm .= '%Eerror%m,'
 let &efm .= '%Wwarning: %m,'
 let &efm .= '%-Z%*\s--> %f:%l:%c,'
 
-
-
+nnoremap vt :vert term<CR>
 
 " line numbers
 set number
