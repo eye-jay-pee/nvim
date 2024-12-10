@@ -25,3 +25,6 @@
 [submodule "awesome-vim-colorschemes"]
 	path = pack/default/start/awesome-vim-colorschemes
 	url = https://github.com/rafi/awesome-vim-colorschemes
+[submodule "pack/default/start/vim-ai"]
+	path = pack/default/start/vim-ai
+	url = https://github.com/madox2/vim-ai
