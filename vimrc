@@ -137,6 +137,9 @@ set expandtab
 filetype plugin indent on
 
 
+" enable man page plugin
+:runtime! ftplugin/man.vim
+
 " explore
 command! E Explore
 
@@ -154,19 +157,26 @@ syntax enable
 color gruvbox
 set background=dark
 
-" font size
-set guifont=Menlo:h15
 
-
-function! RetagCurrentRepo()
-  let g:git_root = trim(system('git rev-parse --show-toplevel'))
-  let g:changed_files = split(system('git diff --name-only HEAD'), "\n")
-  echo g:changed_files
+command! T call ReTag()
+function! ReTag()
+    call RmTags()
+    call Tag()
 endfunction
-
-
-
-
-
+function! Tag()
+    let CFLAGS = '-R -V -a -f'
+    execute printf("!ctags %s %s %s", CFLAGS, GetTagsPath(), GetGitRoot()) 
+endfunction
+function! RmTags()
+    execute printf("!rm %s",GetTagsPath())
+endfunction
+function! GetTagsPath()
+    let g:TAG_FILE_NAME = 'tags'
+    return printf("%s/%s",GetGitRoot(),g:TAG_FILE_NAME)
+endfunction
+function! GetGitRoot()
+    let git_root = trim(system('git rev-parse --show-toplevel 2>/dev/null'))
+    return isdirectory(git_root) ? git_root : ''
+endfunction
 
 
