@@ -28,3 +28,9 @@
 [submodule "pack/default/start/vim-ai"]
 	path = pack/default/start/vim-ai
 	url = https://github.com/madox2/vim-ai
+[submodule "pack/default/start/asyncrun.vim"]
+	path = pack/default/start/asyncrun.vim
+	url = https://github.com/skywind3000/asyncrun.vim
+[submodule "pack/default/start/tagbar"]
+	path = pack/default/start/tagbar
+	url = https://github.com/preservim/tagbar

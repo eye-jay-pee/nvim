@@ -1,6 +1,9 @@
 set secure " do not allow unsafe commands in vim config files
 set exrc " local vim config files have precidence
 
+nnoremap :topen<CR> :TagbarOpen<CR>
+nnoremap :tclose<CR> :TagbarClose<CR>
+nnoremap :tclose<CR> :TagbarClose<CR>
 
 " dotnet settings
 " set makeprg=dotnet
@@ -10,8 +13,6 @@ set exrc " local vim config files have precidence
 au BufNewFile,BufRead *.xaml        setf xml
 " end of temp dotnet settings
 
-syntax enable
-filetype plugin indent on
 
 " rust settings 
 let &efm = ''
@@ -36,36 +37,45 @@ let &efm .= '%Eerror%m,'
 let &efm .= '%Wwarning: %m,'
 let &efm .= '%-Z%*\s--> %f:%l:%c,'
 
+
+
+augroup AIChatMapping
+  autocmd!
+  " Set the mapping when entering an aichat buffer
+  autocmd FileType aichat nnoremap <silent><buffer> :w :AIChat
+augroup END
+
+
 " navigate in normal mode
-nnoremap <Left>  :call ForceWinCMD('h')<CR>
-nnoremap <Down>  :call ForceWinCMD('j')<CR>
-nnoremap <Up>    :call ForceWinCMD('k')<CR>
-nnoremap <Right> :call ForceWinCMD('l')<CR>
+nnoremap <silent> <Left>  :call ForceWinCMD('h')<CR>
+nnoremap <silent> <Down>  :call ForceWinCMD('j')<CR>
+nnoremap <silent> <Up>    :call ForceWinCMD('k')<CR>
+nnoremap <silent> <Right> :call ForceWinCMD('l')<CR>
 " navigate in term mode
-tnoremap <Left>  <C-\><C-N><Esc>:call ForceWinCMD('h')<CR>
-tnoremap <Down>  <C-\><C-N><Esc>:call ForceWinCMD('j')<CR>
-tnoremap <Up>    <C-\><C-N><Esc>:call ForceWinCMD('k')<CR>
-tnoremap <Right> <C-\><C-N><Esc>:call ForceWinCMD('l')<CR>
+tnoremap <silent> <Left>  <C-w>:call ForceWinCMD('h')<CR>
+tnoremap <silent> <Down>  <C-w>:call ForceWinCMD('j')<CR>
+tnoremap <silent> <Up>    <C-w>:call ForceWinCMD('k')<CR>
+tnoremap <silent> <Right> <C-w>:call ForceWinCMD('l')<CR>
 
 function! ForceWinCMD(direction)
     if a:direction =~# '^[hjkl]$'
-        let start_window = winnr()
-        exec 'wincmd ' . a:direction
+        let leaving_dead_window = InUnusedWindow()
 
-        if start_window == winnr() 
-            " edge reached, make a new window pane
+        let old_window = winnr()
+        exec "normal! \<C-w>" . a:direction
+        let new_window = winnr()
+
+        if(old_window == new_window)
             call AutoSplit(a:direction)
-        else
-            " clear empty buffers upon exit
-            call KillWindowIfEmpty(start_window)
-            call DefaultToTerminalMode()
+        elseif leaving_dead_window 
+            execute old_window . 'wincmd q'
         endif
     else
         echoerr "Invalid direction. Use on of: h, j, k, l."
     endif
 endfunction
-
 function! AutoSplit(direction)
+
     if a:direction ==# 'h'
         exec 'vertical   leftabove  new' 
     elseif a:direction ==# 'j'
@@ -78,25 +88,20 @@ function! AutoSplit(direction)
         echoerr "Invalid direction. Use on of: h, j, k, l."
     endif
 endfunction
-function! KillWindowIfEmpty(window)
-    if a:window > 0 && a:window <= winnr('$')
-        let buffer = winbufnr(a:window)
 
-        if join(getbufline(buffer, 1, '$')) !~# '\S'
-            execute a:window . 'wincmd q'
-        endif
+function! InUnusedWindow()
+    let no_type = &buftype == '' 
+    let no_name = bufname('%') == '' 
+    let single_line = line('$') == 1 
+    let empty_first_line = getline(1) == ''
+
+    if (no_type && no_name && single_line && empty_first_line)
+        return 1
     else
-        echoerr "Invalid window number."
+        return 0
     endif
 endfunction
-function! DefaultToTerminalMode()
-    if &filetype ==# 'terminal'
-        echo "TERMINAL"
-        call feedkeys("a")
-    else
-        echo " not TERMINAL"
-    endif
-endfunction
+
 
 
 " arrow keys work normally when holding alt/option in normal mode
@@ -129,16 +134,36 @@ set softtabstop=4
 set autoindent
 set smartindent
 set expandtab 
+filetype plugin indent on
+
 
 " explore
 command! E Explore
 
+command! M make
+
+
+" why is Async make not launching cargo as it should? need to check the rust.vim
+" extention code. i suspect it checks for .rs in the file name, only applying
+" rust settings if in a rust file (:make doesn't work in :Explore mode or in
+" none-source files). Whatever Async does causes % to temporarily not be *.rs,
+" because the async process likly has no file name. 
+
 " colors
-color nord
+syntax enable
+color gruvbox
 set background=dark
 
 " font size
-set guifont=Menlo:h13
+set guifont=Menlo:h15
+
+
+function! RetagCurrentRepo()
+  let g:git_root = trim(system('git rev-parse --show-toplevel'))
+  let g:changed_files = split(system('git diff --name-only HEAD'), "\n")
+  echo g:changed_files
+endfunction
+
 
 
 
