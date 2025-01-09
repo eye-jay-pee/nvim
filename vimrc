@@ -1,50 +1,7 @@
-set secure " do not allow unsafe commands in vim config files
-set exrc " local vim config files have precidence
-
-nnoremap :topen<CR> :TagbarOpen<CR>
-nnoremap :tclose<CR> :TagbarClose<CR>
-nnoremap :tclose<CR> :TagbarClose<CR>
-
-" dotnet settings
-" set makeprg=dotnet
-" set errorformat+=%f(%l\\,%c):\ error\ CS%n:\ %m\ [%o]
-" set errorformat+=%f(%l\\,%c):\ error\ MC%n:\ %m\ [%o]
-" format xaml as xml, becasue syntax is similar
-au BufNewFile,BufRead *.xaml        setf xml
-" end of temp dotnet settings
-
-
-" rust settings 
-let &efm = ''
-" Random non issue stuff
-let &efm .= '%-G%.%#aborting due to previous error%.%#,'
-let &efm .= '%-G%.%#test failed, to rerun pass%.%#,'
-" Capture enter directory events for doc tests
-let &efm .= '%D%*\sDoc-tests %f%.%#,'
-" Doc Tests
-let &efm .= '%E---- %f - %o (line %l) stdout ----,'
-let &efm .= '%Cerror%m,'
-let &efm .= '%-Z%*\s--> %f:%l:%c,'
-" Unit tests && `tests/` dir failures
-" This pattern has to come _after_ the doc test one
-let &efm .= '%E---- %o stdout ----,'
-let &efm .= '%Zthread %.%# panicked at %m\, %f:%l:%c,'
-let &efm .= '%Cthread %.%# panicked at %m,'
-let &efm .= '%+C%*\sleft: %.%#,'
-let &efm .= '%+Z%*\sright: %.%#\, %f:%l:%c,'
-" Compiler Errors and Warnings
-let &efm .= '%Eerror%m,'
-let &efm .= '%Wwarning: %m,'
-let &efm .= '%-Z%*\s--> %f:%l:%c,'
-
-
-
-augroup AIChatMapping
-  autocmd!
-  " Set the mapping when entering an aichat buffer
-  autocmd FileType aichat nnoremap <silent><buffer> :w :AIChat
-augroup END
-
+" colors
+syntax enable
+color gruvbox
+set background=dark
 
 " navigate in normal mode
 nnoremap <silent> <Left>  :call ForceWinCMD('h')<CR>
@@ -58,20 +15,30 @@ tnoremap <silent> <Up>    <C-w>:call ForceWinCMD('k')<CR>
 tnoremap <silent> <Right> <C-w>:call ForceWinCMD('l')<CR>
 
 function! ForceWinCMD(direction)
-    if a:direction =~# '^[hjkl]$'
+    if !(a:direction =~# '^[hjkl]$')
+        execute printf("%s wincmd q", old_window)
+    else
+        " observe window state before moving to new one
         let leaving_dead_window = InUnusedWindow()
-
         let old_window = winnr()
+
+        " move 
         exec "normal! \<C-w>" . a:direction
         let new_window = winnr()
 
+        " If move wasn't sucessful, there wasn't anywhere to go, so split.
         if(old_window == new_window)
             call AutoSplit(a:direction)
-        elseif leaving_dead_window 
-            execute old_window . 'wincmd q'
+            execute ':Explore'
+        endif 
+
+        " dont leave empty windows open
+        if leaving_dead_window 
+            echo "delete prev windw"
+            " execute old_window . 'wincmd q'
+        else 
+            echo "keep prev window"
         endif
-    else
-        echoerr "Invalid direction. Use on of: h, j, k, l."
     endif
 endfunction
 function! AutoSplit(direction)
@@ -88,14 +55,17 @@ function! AutoSplit(direction)
         echoerr "Invalid direction. Use on of: h, j, k, l."
     endif
 endfunction
-
 function! InUnusedWindow()
     let no_type = &buftype == '' 
     let no_name = bufname('%') == '' 
-    let single_line = line('$') == 1 
-    let empty_first_line = getline(1) == ''
+    let single_ln = line('$') == 1 
+    let empty_first_ln = getline(1) == ''
 
-    if (no_type && no_name && single_line && empty_first_line)
+    let in_explorer = exists('b:netrw_curdir')
+
+    if in_explorer 
+        return 1
+    elseif (no_type && no_name && single_ln && empty_first_ln)
         return 1
     else
         return 0
@@ -143,40 +113,104 @@ filetype plugin indent on
 " explore
 command! E Explore
 
-command! M make
+
+
+
+
 
 
 " why is Async make not launching cargo as it should? need to check the rust.vim
 " extention code. i suspect it checks for .rs in the file name, only applying
-" rust settings if in a rust file (:make doesn't work in :Explore mode or in
-" none-source files). Whatever Async does causes % to temporarily not be *.rs,
+" rust settings if in a rust file (:make doesn't work in :Explore mode or in" none-source files). Whatever Async does causes % to temporarily not be *.rs,
 " because the async process likly has no file name. 
 
-" colors
-syntax enable
-color gruvbox
-set background=dark
 
 
-command! T call ReTag()
-function! ReTag()
-    call RmTags()
-    call Tag()
-endfunction
+
+command! T call RmTags() | call Tag()
+
+command! M call so $MYVIMRC | 
+
 function! Tag()
-    let CFLAGS = '-R -V -a -f'
-    execute printf("!ctags %s %s %s", CFLAGS, GetTagsPath(), GetGitRoot()) 
+    let gitroot = GitRoot(expand('%:p'))
+    echo gitroot
+    if !empty(gitroot)
+        let flags = printf("-R -V -a -f %s", BuildIgnoreFlag())
+        let tagfile = GetTagsPath()
+        execute printf("!ctags %s %s %s", flags, tagfile, gitroot) 
+        execute printf("set tags+=%s", tagfile)
+    else
+        echo "not in a git repo"
+    endif
 endfunction
+
+
+
+" Evaluates to the root of the git dir containing a:path
+function! GitRoot(path)
+    let temppath = expand('%:p')
+    let cmd = printf('git -C %s rev-parse --show-toplevel 2>/dev/null',temppath)
+    let root = trim(system(cmd))
+    return root
+    " return isdirectory(root)? root:''
+endfunction
+
+
+
+
 function! RmTags()
-    execute printf("!rm %s",GetTagsPath())
+    silent! execute printf("!rm -f %s > /dev/null",GetTagsPath())
+endfunction
+
+function! BuildIgnoreFlag()
+    let excludes = ''
+    for line in GetGitIgnored()
+        let excludes .= printf(" --exclude=%s",line)
+    endfor
+    return excludes 
 endfunction
 function! GetTagsPath()
-    let g:TAG_FILE_NAME = 'tags'
-    return printf("%s/%s",GetGitRoot(),g:TAG_FILE_NAME)
+    let tag_file_name = 'tags'
+    return printf("%s/%s",GetGitRoot(),tag_file_name)
 endfunction
-function! GetGitRoot()
-    let git_root = trim(system('git rev-parse --show-toplevel 2>/dev/null'))
-    return isdirectory(git_root) ? git_root : ''
+function! GetGitIgnored()
+    let git_ignore_file = printf("%s/.gitignore", GetGitRoot())
+    return filereadable(git_ignore_file)? readfile(git_ignore_file):[]
+endfunction
+function! GetGitModules(path)
+    let submodules = []
+    let file = printf("%s/.gitmodules", GetGitRoot(a:path))
+    for line in filereadable(file)? readfile(file):[] 
+        let submod = substitute(trim(line), '^path = ', '', '')
+        let submod = substitute(submod, '.vim$', '', '')
+        if isdirectory(submod)
+            " echo printf('submodule documenation: %s', submod)
+            call add(submodules, matches[1])
+        endif
+    endfor
+    return submodules
 endfunction
 
 
+
+
+" function! CheckForHelpFiles(path
+"     let plugins = GetGitModules(a:path)
+"     " for plugin in plugins 
+"     "     let docs = printf("%s/doc/",plugin)
+"     "     if isdirectory(docs)
+"     "         echo printf("helptags %s",docs)
+"     "     endif
+"     " endfor
+" endfunction
+
+" augroup AIChatMapping
+"   autocmd!
+"   " Set the mapping when entering an aichat buffer
+"   autocmd FileType aichat nnoremap <silent><buffer> :w :AIChat
+"   autocmd FileType aichat setlocal nonumber norelativenumber
+" augroup END
+
+
+" autocmds cannot modify .vimrc or .exrc
+set secure 
