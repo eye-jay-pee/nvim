@@ -1,8 +1,22 @@
-" colors
-syntax enable
-color gruvbox
-set background=dark
+" line numbers
+set number
+set relativenumber
+set laststatus=2
+set textwidth=80
+set colorcolumn=81
+set cursorline
+set hlsearch
+set ruler
 
+" tabs and indentation
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set autoindent
+set smartindent
+set expandtab 
+filetype plugin indent on
+" ARROW KEY NAVIAGATION
 " navigate in normal mode
 nnoremap <silent> <Left>  :call ForceWinCMD('h')<CR>
 nnoremap <silent> <Down>  :call ForceWinCMD('j')<CR>
@@ -13,7 +27,16 @@ tnoremap <silent> <Left>  <C-w>:call ForceWinCMD('h')<CR>
 tnoremap <silent> <Down>  <C-w>:call ForceWinCMD('j')<CR>
 tnoremap <silent> <Up>    <C-w>:call ForceWinCMD('k')<CR>
 tnoremap <silent> <Right> <C-w>:call ForceWinCMD('l')<CR>
-
+" arrow keys work normally when holding alt/option in normal mode
+nnoremap <A-Up>    <Up>
+nnoremap <A-Down>  <Down>
+nnoremap <A-Left>  <Left>
+nnoremap <A-Right> <Right>
+" arrow keys work normally when holding alt/option in term mode
+tnoremap <A-Up>    <Up>
+tnoremap <A-Down>  <Down>
+tnoremap <A-Left>  <Left>
+tnoremap <A-Right> <Right>
 function! ForceWinCMD(direction)
     if !(a:direction =~# '^[hjkl]$')
         execute printf("%s wincmd q", old_window)
@@ -34,15 +57,11 @@ function! ForceWinCMD(direction)
 
         " dont leave empty windows open
         if leaving_dead_window 
-            echo "delete prev windw"
-            " execute old_window . 'wincmd q'
-        else 
-            echo "keep prev window"
+            execute old_window . 'wincmd q'
         endif
     endif
 endfunction
 function! AutoSplit(direction)
-
     if a:direction ==# 'h'
         exec 'vertical   leftabove  new' 
     elseif a:direction ==# 'j'
@@ -56,59 +75,20 @@ function! AutoSplit(direction)
     endif
 endfunction
 function! InUnusedWindow()
-    let no_type = &buftype == '' 
-    let no_name = bufname('%') == '' 
-    let single_ln = line('$') == 1 
-    let empty_first_ln = getline(1) == ''
-
-    let in_explorer = exists('b:netrw_curdir')
-
-    if in_explorer 
-        return 1
-    elseif (no_type && no_name && single_ln && empty_first_ln)
-        return 1
-    else
+    if &filetype ==# 'netrw' 
+        return (expand('%:r') ==# getcwd())
+    elseif &filetype ==# ''
+        return (line('$') == 1) && (getline(1) ==# '')
+    else 
         return 0
     endif
 endfunction
 
 
 
-" arrow keys work normally when holding alt/option in normal mode
-nnoremap <A-Up>    <Up>
-nnoremap <A-Down>  <Down>
-nnoremap <A-Left>  <Left>
-nnoremap <A-Right> <Right>
-" arrow keys work normally when holding alt/option in term mode
-tnoremap <A-Up>    <Up>
-tnoremap <A-Down>  <Down>
-tnoremap <A-Left>  <Left>
-tnoremap <A-Right> <Right>
-
-
-
-" line numbers
-set number
-set relativenumber
-set laststatus=2
-set textwidth=80
-set colorcolumn=81
-set cursorline
-set hlsearch
-set ruler
-
-" tabs and indentation
-set tabstop=4
-set shiftwidth=4
-set softtabstop=4
-set autoindent
-set smartindent
-set expandtab 
-filetype plugin indent on
-
 
 " enable man page plugin
-:runtime! ftplugin/man.vim
+runtime! ftplugin/man.vim
 
 " explore
 command! E Explore
@@ -211,6 +191,9 @@ endfunction
 "   autocmd FileType aichat setlocal nonumber norelativenumber
 " augroup END
 
+
+" apply syntax highlighting settings
+syntax enable
 
 " autocmds cannot modify .vimrc or .exrc
 set secure 
