@@ -1,14 +1,11 @@
-" line numbers
-set number
-set relativenumber
+" tabs and indentation and some misc shit
 set laststatus=2
 set textwidth=80
 set colorcolumn=81
+set linebreak
 set cursorline
 set hlsearch
 set ruler
-
-" tabs and indentation
 set tabstop=4
 set shiftwidth=4
 set softtabstop=4
@@ -16,6 +13,33 @@ set autoindent
 set smartindent
 set expandtab 
 filetype plugin indent on
+
+set wrap
+set breakindent
+set breakindentopt=shift:4
+set linebreak
+
+
+command! -nargs=* A execute 'AIChat ' join([<f-args>], ' ')
+command! -nargs=* E execute 'Explore ' join([<f-args>], ' ')
+command! T call UpdateTags()
+function! UpdateTags()
+    let githead = GitHeadFromCurrentPhile()
+
+    let excludeflag = ''
+    for file in GitIgnored()
+        let excludeflag .= ' --exclude=' . githead . '/' . file
+    endfor
+
+    let tagfile = githead . 'tags'
+    call delete(tagfile)
+    
+    let taggencmd = 'ctags' . ' -R -f ' . tagfile . excludeflag
+    call system(taggencmd . ' ' . githead)
+
+    execute 'set tags=' . tagfile
+endfunction
+
 " ARROW KEY NAVIAGATION
 " navigate in normal mode
 nnoremap <silent> <Left>  :call ForceWinCMD('h')<CR>
@@ -51,8 +75,9 @@ function! ForceWinCMD(direction)
 
         " If move wasn't sucessful, there wasn't anywhere to go, so split.
         if(old_window == new_window)
+            let dir = expand('%:h')
             call AutoSplit(a:direction)
-            execute ':Explore'
+            execute ':Explore ' . dir
         endif 
 
         " dont leave empty windows open
@@ -83,117 +108,81 @@ function! InUnusedWindow()
         return 0
     endif
 endfunction
-
-
-
-
-" enable man page plugin
-runtime! ftplugin/man.vim
-
-" explore
-command! E Explore
-
-
-
-
-
-
-
-" why is Async make not launching cargo as it should? need to check the rust.vim
-" extention code. i suspect it checks for .rs in the file name, only applying
-" rust settings if in a rust file (:make doesn't work in :Explore mode or in" none-source files). Whatever Async does causes % to temporarily not be *.rs,
-" because the async process likly has no file name. 
-
-
-
-
-command! T call RmTags() | call Tag()
-
-command! M call so $MYVIMRC | 
-
-function! Tag()
-    let gitroot = GitRoot(expand('%:p'))
-    echo gitroot
-    if !empty(gitroot)
-        let flags = printf("-R -V -a -f %s", BuildIgnoreFlag())
-        let tagfile = GetTagsPath()
-        execute printf("!ctags %s %s %s", flags, tagfile, gitroot) 
-        execute printf("set tags+=%s", tagfile)
+function! GitHead(path)
+    let flags = ' rev-parse --show-toplevel 2>/dev/null'
+    let cmd = 'git -C ' . a:path . flags
+    let root = trim(system(cmd))
+    return isdirectory(root)? fnamemodify(root, ':p') : ''
+endfunction
+function! GitHeadFromCurrentPhile()
+    return GitHead(expand('%:p:h'))
+endfunction
+function! GitHeadFromCurrentWorkingDir()
+    return GitHead(getcwd())
+endfunction
+function! GitIgnored()
+    let naughtylist = []
+    let gitignorefilepath = GitHeadFromCurrentPhile() . '/.gitignore'
+    if filereadable(gitignorefilepath)
+        for line in readfile(gitignorefilepath)
+            if !empty(line) && line !=# '^#'
+                call extend(naughtylist, glob(line, 0, 1))
+            endif
+        endfor
+    endif
+    return naughtylist
+endfunction
+function! GitModules()
+    let submodslist = []
+    let githead = GitHeadFromCurrentPhile()
+    let modulesfile = githead . '/.gitmodules'
+    if filereadable(modulesfile)
+        for line in readfile(modulesfile)
+            let path = matchstr(line, '^\s*path\s*=\s*\zs.\+\ze\s*$')
+            if isdirectory(path)
+                call add(submodslist, githead . path)
+            endif
+        endfor
+    endif
+    return submodslist 
+endfunction
+" AUTO LINE NUMBERS
+autocmd WinEnter,BufWinEnter,WinResized,InsertLeave * call AutoLineBar()
+function! AutoLineBar()
+    if line('$') <= 0x0f
+        set nonumber
+        set norelativenumber
+    elseif line('$') <= 0x1f
+        set number
+        set norelativenumber
     else
-        echo "not in a git repo"
+        set number
+        set relativenumber
     endif
 endfunction
 
-
-
-" Evaluates to the root of the git dir containing a:path
-function! GitRoot(path)
-    let temppath = expand('%:p')
-    let cmd = printf('git -C %s rev-parse --show-toplevel 2>/dev/null',temppath)
-    let root = trim(system(cmd))
-    return root
-    " return isdirectory(root)? root:''
-endfunction
-
-
-
-
-function! RmTags()
-    silent! execute printf("!rm -f %s > /dev/null",GetTagsPath())
-endfunction
-
-function! BuildIgnoreFlag()
-    let excludes = ''
-    for line in GetGitIgnored()
-        let excludes .= printf(" --exclude=%s",line)
-    endfor
-    return excludes 
-endfunction
-function! GetTagsPath()
-    let tag_file_name = 'tags'
-    return printf("%s/%s",GetGitRoot(),tag_file_name)
-endfunction
-function! GetGitIgnored()
-    let git_ignore_file = printf("%s/.gitignore", GetGitRoot())
-    return filereadable(git_ignore_file)? readfile(git_ignore_file):[]
-endfunction
-function! GetGitModules(path)
-    let submodules = []
-    let file = printf("%s/.gitmodules", GetGitRoot(a:path))
-    for line in filereadable(file)? readfile(file):[] 
-        let submod = substitute(trim(line), '^path = ', '', '')
-        let submod = substitute(submod, '.vim$', '', '')
-        if isdirectory(submod)
-            " echo printf('submodule documenation: %s', submod)
-            call add(submodules, matches[1])
-        endif
-    endfor
-    return submodules
-endfunction
-
-
-
-
-" function! CheckForHelpFiles(path
-"     let plugins = GetGitModules(a:path)
-"     " for plugin in plugins 
-"     "     let docs = printf("%s/doc/",plugin)
-"     "     if isdirectory(docs)
-"     "         echo printf("helptags %s",docs)
-"     "     endif
-"     " endfor
-" endfunction
-
-" augroup AIChatMapping
-"   autocmd!
-"   " Set the mapping when entering an aichat buffer
-"   autocmd FileType aichat nnoremap <silent><buffer> :w :AIChat
-"   autocmd FileType aichat setlocal nonumber norelativenumber
-" augroup END
+" html files are also opened in a browser. this is convienent when writing html
+" or viewing docs generated by rust from a <C-]>.
+augroup HtmlAutoCmd
+    autocmd!
+    autocmd BufRead,BufNewFile *.html execute '!open ' . shellescape(expand('%:p'))
+augroup END
 
 
 " apply syntax highlighting settings
 syntax enable
 
+" rust files are autoformatted when saved
+" TODO figure this out for c code!
+let g:rustfmt_autosave = 1
+
+" enable builtin man page viewer plugin
+runtime! ftplugin/man.vim
+:helptags ALL
+
 " autocmds cannot modify .vimrc or .exrc
 set secure 
+echom 'vim config loaded'
+
+color gruvbox
+set guifont=CourierNewPS-ItalicMT:h14
