@@ -207,6 +207,7 @@ set secure
 echom 'vim config loaded'
 
 color gruvbox
+set background=dark
 set guifont=CourierNewPS-ItalicMT:h14
 
 
