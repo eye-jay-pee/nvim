@@ -16,9 +16,6 @@
 [submodule "pack/default/start/rust.vim"]
 	path = pack/default/start/rust.vim
 	url = https://github.com/rust-lang/rust.vim
-[submodule "pack/default/start/vim-taskwarrior"]
-	path = pack/default/start/vim-taskwarrior
-	url = https://github.com/blindFS/vim-taskwarrior
 [submodule "awesome-vim-colorschemes"]
 	path = pack/default/start/awesome-vim-colorschemes
 	url = https://github.com/rafi/awesome-vim-colorschemes
