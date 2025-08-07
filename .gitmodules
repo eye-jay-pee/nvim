@@ -1,30 +1,9 @@
 [submodule "pack/gruvbox"]
 	path = pack/gruvbox
 	url = https://github.com/morhetz/gruvbox.git
-[submodule "pack/default/start/gruvbox"]
-	path = pack/default/start/gruvbox
-	url = https://github.com/morhetz/gruvbox.git
 [submodule "pack/default/start/vim-fugitive"]
 	path = pack/default/start/vim-fugitive
 	url = https://github.com/tpope/vim-fugitive.git
-[submodule "pack/default/start/vim-airline"]
-	path = pack/default/start/vim-airline
-	url = https://github.com/vim-airline/vim-airline.git
-[submodule "pack/default/start/vim-unimpaired"]
-	path = pack/default/start/vim-unimpaired
-	url = https://github.com/tpope/vim-unimpaired
 [submodule "pack/default/start/rust.vim"]
 	path = pack/default/start/rust.vim
 	url = https://github.com/rust-lang/rust.vim
-[submodule "awesome-vim-colorschemes"]
-	path = pack/default/start/awesome-vim-colorschemes
-	url = https://github.com/rafi/awesome-vim-colorschemes
-[submodule "pack/default/start/vim-ai"]
-	path = pack/default/start/vim-ai
-	url = https://github.com/madox2/vim-ai
-[submodule "pack/default/start/asyncrun.vim"]
-	path = pack/default/start/asyncrun.vim
-	url = https://github.com/skywind3000/asyncrun.vim
-[submodule "pack/default/start/tagbar"]
-	path = pack/default/start/tagbar
-	url = https://github.com/preservim/tagbar
